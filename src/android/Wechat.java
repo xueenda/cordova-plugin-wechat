@@ -35,6 +35,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class Wechat extends CordovaPlugin {
 
@@ -87,6 +89,7 @@ public class Wechat extends CordovaPlugin {
     public static final int SCENE_FAVORITE = 2;
 
     public static final int MAX_THUMBNAIL_SIZE = 320;
+    public static final int MAX_THUMBNAIL_FILE_SIZE = 262144;
 
     public static Wechat instance = null;
 
@@ -478,17 +481,25 @@ public class Wechat extends CordovaPlugin {
 
             if (URLUtil.isHttpUrl(url) || URLUtil.isHttpsUrl(url)) {
 
-                File file = Util.downloadAndCacheFile(webView.getContext(), url);
+                URL ImageUrl = new URL(url);
 
-                if (file == null) {
-                    Log.d(TAG, String.format("File could not be downloaded from %s.", url));
+                HttpURLConnection conn = (HttpURLConnection) ImageUrl
+                        .openConnection();
+                conn.setDoInput(true);
+                conn.connect();
+
+                int file_size = conn.getContentLength();
+
+                if (file_size > MAX_THUMBNAIL_FILE_SIZE) {
+                    Log.e(TAG, String.format("Thumbnail file size %d over limit 32kb.", file_size));
                     return null;
                 }
 
-                url = file.getAbsolutePath();
-                inputStream = new FileInputStream(file);
-
-                Log.d(TAG, String.format("File was downloaded and cached to %s.", url));
+                try{
+                    inputStream = conn.getInputStream();
+                }catch (IOException e) {
+                    e.printStackTrace();
+                }
 
             } else if (url.startsWith("data:image")) {  // base64 image
 
