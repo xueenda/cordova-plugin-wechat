@@ -478,17 +478,16 @@ public class Wechat extends CordovaPlugin {
 
             if (URLUtil.isHttpUrl(url) || URLUtil.isHttpsUrl(url)) {
 
-                File file = Util.downloadAndCacheFile(webView.getContext(), url);
+                URL ImageUrl = new URL(url);
 
-                if (file == null) {
-                    Log.d(TAG, String.format("File could not be downloaded from %s.", url));
-                    return null;
+                HttpURLConnection conn = (HttpURLConnection) ImageUrl.openConnection();
+                conn.setDoInput(true);
+                conn.connect();
+                try{
+                    inputStream = conn.getInputStream();
+                }catch (IOException e) {
+                    e.printStackTrace();
                 }
-
-                url = file.getAbsolutePath();
-                inputStream = new FileInputStream(file);
-
-                Log.d(TAG, String.format("File was downloaded and cached to %s.", url));
 
             } else if (url.startsWith("data:image")) {  // base64 image
 
